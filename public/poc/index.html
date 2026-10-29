@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>360 Prototype – Countryman S</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EEF0F1; --panel:#FFFFFF; --ink:#16191C; --muted:#5F676E; --line:#D3D8DC;
+  --accent:#B3141B; --ring:#16191C;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#15181B; --panel:#1E2226; --ink:#ECEEF0; --muted:#9AA3AB; --line:#30363C; --ring:#ECEEF0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#15181B; --panel:#1E2226; --ink:#ECEEF0; --muted:#9AA3AB; --line:#30363C; --ring:#ECEEF0;
+  color-scheme: dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px;line-height:1.5;min-height:100%}
+.wrap{max-width:1440px;margin:0 auto;padding:20px clamp(14px,3vw,32px) 40px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;align-items:start}
+header{grid-column:1/-1;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+h1{margin:0;font-size:clamp(28px,4.2vw,52px);line-height:.95;font-weight:800;font-stretch:118%;letter-spacing:-.01em}
+h1 .model{display:block;font-weight:400;font-stretch:80%;font-size:.42em;letter-spacing:.01em;color:var(--muted);margin-top:8px}
+.bgpick{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.bgpick span{color:var(--muted);font-size:13px;margin-right:4px}
+.chip{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:6px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--paper)}
+.chip:focus-visible,.sw:focus-visible,.stage:focus-visible,input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+label.chip input{position:absolute;opacity:0;width:1px;height:1px}
+
+.stagecol{min-width:0}
+.stage{position:relative;aspect-ratio:16/9;border-radius:6px;overflow:hidden;cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none;background:#d9dde0}
+.stage.dragging{cursor:grabbing}
+.bg{position:absolute;inset:0;background-size:cover;background-position:center}
+.bg.studio{background:radial-gradient(120% 70% at 50% 35%,#FAFAFA 0%,#E4E7EA 55%,#C9CED2 100%)}
+.bg.studio::after{content:"";position:absolute;left:0;right:0;top:66%;bottom:0;background:linear-gradient(#D5D9DC,#C3C8CC)}
+.bg.dusk{background:linear-gradient(180deg,#2B3A55 0%,#8A6A7A 42%,#E2A27A 64%,#3A3537 64.2%,#26292C 100%)}
+.bg.night{background:radial-gradient(80% 60% at 50% 70%,#3A4148 0%,#1A1D20 60%,#0E1012 100%)}
+.bg.night::after{content:"";position:absolute;left:0;right:0;top:68%;bottom:0;background:linear-gradient(#2A2F34,#121416)}
+.car{position:absolute;left:50%;top:56%;width:min(96%,1180px);transform:translate(-50%,-50%);aspect-ratio:1600/747}
+.car canvas{position:absolute;inset:0;width:100%;height:100%;transition:opacity 110ms linear}
+.hud{position:absolute;left:14px;right:14px;bottom:12px;display:flex;justify-content:space-between;align-items:center;font-size:13px;pointer-events:none}
+.pill{background:rgba(20,22,25,.62);color:#fff;padding:5px 11px;border-radius:999px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.loading{position:absolute;inset:0;display:grid;place-items:center;font-size:14px;color:#2a2e33}
+.scrub{margin-top:14px;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
+.scrub button{font:inherit;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;font-size:16px;line-height:1}
+.track{position:relative;height:36px}
+.track input{position:absolute;inset:0;width:100%;margin:0;opacity:0;cursor:pointer}
+.ticks{position:absolute;left:0;right:0;top:50%;height:2px;background:var(--line);transform:translateY(-50%)}
+.tick{position:absolute;top:50%;width:2px;height:12px;background:var(--muted);transform:translate(-50%,-50%)}
+.knob{position:absolute;top:50%;width:16px;height:16px;border-radius:50%;background:var(--accent);border:3px solid var(--panel);box-shadow:0 0 0 1px var(--ink);transform:translate(-50%,-50%);transition:left 60ms linear}
+
+aside{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 18px 14px}
+.group{padding:14px 0;border-bottom:1px solid var(--line)}
+.group:last-of-type{border-bottom:0}
+.ghead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:10px}
+.ghead h2{margin:0;font-size:16px;font-weight:700;font-stretch:105%}
+.ghead output{font-size:13px;color:var(--muted);text-align:right}
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.sw{width:34px;height:34px;border-radius:50%;border:1px solid rgba(0,0,0,.18);cursor:pointer;padding:0;position:relative;background:var(--c)}
+.sw[aria-checked="true"]{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--ring)}
+.sw.orig::after{content:"";position:absolute;inset:-1px;border-radius:50%;background:conic-gradient(from 210deg,transparent 0 50%,rgba(255,255,255,.0) 50%);}
+.sw.orig{background:linear-gradient(135deg,var(--c) 0 50%,var(--c2,var(--c)) 50% 100%)}
+.sw .tag{position:absolute;inset:auto 0 -2px auto;width:12px;height:12px;border-radius:50%;background:var(--panel);border:1px solid var(--line);font-size:8px;line-height:10px;text-align:center;color:var(--ink)}
+.sw.match{background:conic-gradient(var(--c) 0 50%,var(--c2) 50% 100%)}
+footer{grid-column:1/-1;display:flex;justify-content:center;align-items:center;gap:10px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+footer img{height:22px;width:auto;display:block}
+.reset{font:inherit;font-size:13px;background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;padding:12px 0 0}
+@media (max-width:960px){
+  .wrap{grid-template-columns:1fr}
+  .stage{aspect-ratio:4/3}
+  .car{top:55%;width:100%}
+}
+@media (prefers-reduced-motion:reduce){.car canvas,.knob{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>360 Prototype<span class="model">Countryman S, 12 frames, colour layers recoloured live</span></h1>
+    <div class="bgpick" role="group" aria-label="Background">
+      <span>Background</span>
+      <button class="chip" data-bg="studio" aria-pressed="true">Studio</button>
+      <button class="chip" data-bg="dusk" aria-pressed="false">Dusk</button>
+      <button class="chip" data-bg="night" aria-pressed="false">Night</button>
+      <label class="chip" tabindex="0">Upload image<input type="file" accept="image/*" id="bgfile"></label>
+    </div>
+  </header>
+
+  <div class="stagecol">
+    <div class="stage" id="stage" tabindex="0" aria-label="Car viewer. Drag or use the left and right arrow keys to rotate.">
+      <div class="bg studio" id="bg"></div>
+      <div class="car"><canvas id="c0" width="1600" height="747"></canvas><canvas id="c1" width="1600" height="747" style="opacity:0"></canvas></div>
+      <div class="loading" id="loading">Preparing frames…</div>
+      <div class="hud"><span class="pill" id="hint">Drag to rotate</span><span class="pill" id="deg">0°</span></div>
+    </div>
+    <div class="scrub">
+      <button id="prev" aria-label="Previous angle">‹</button>
+      <div class="track">
+        <div class="ticks" id="ticks"></div>
+        <div class="knob" id="knob"></div>
+        <input type="range" id="range" min="0" max="359" value="0" step="1" aria-label="Viewing angle in degrees">
+      </div>
+      <button id="next" aria-label="Next angle">›</button>
+    </div>
+  </div>
+
+  <aside id="panel" aria-label="Colour options"></aside>
+
+  <footer><span>Powered by</span><img src="/dox-logo.svg" alt="DOX" width="41" height="22"></footer>
+</div>
+
+<script>
+// Assets load from public/vehicles/countryman-s/ (masks store literal labels 0–5)
+const ASSETS = Object.fromEntries([0,30,45,90,135,150,180,210,225,270,315,330].map(a=>{const f=String(a).padStart(3,"0");return [a,{img:"/vehicles/countryman-s/frames/"+f+".webp",mask:"/vehicles/countryman-s/masks/"+f+".png"}];}));
+const ANG = Object.keys(ASSETS).map(Number).sort((a,b)=>a-b);
+
+// Region ids match the mask values: 1 paint, 2 roof, 3 mirror caps, 4 trim, 5 wheels
+const GROUPS = [
+  {id:1, name:"Paint", orig:"#B3141B", options:[
+    ["Original red",null],["Racing green","#1F3D2D"],["Deep black","#141618"],["Off white","#E6E6E1"],
+    ["Petrol blue","#2C6A86"],["Mustard","#D9A62B"],["Slate grey","#5B6166"],["Lilac","#9A86B5"]]},
+  {id:2, name:"Roof", orig:"#1A1C1E", options:[
+    // White temporarily removed: near-black roof areas can't lift to white (re-add: ["White","#EBEBE7"])
+    ["Original black",null],["Silver","#B5B9BC"],["Red","#B3141B"],["Match paint","@1"]]},
+  {id:3, name:"Mirror caps", orig:"#1A1C1E", options:[
+    ["Original black",null],["White","#EBEBE7"],["Silver","#B5B9BC"],["Red","#B3141B"],["Match roof","@2"],["Match paint","@1"]]},
+  {id:4, name:"Trim", orig:"#CDBF9D", options:[
+    ["Original champagne",null],["Gloss black","#151515"],["Satin silver","#A8ACAF"],["Bronze","#8A6A47"],["Copper","#A85A36"]]},
+  {id:5, name:"Wheel accents", orig:"#CDBF9D", options:[
+    ["Original champagne",null],["Black","#18191A"],["Silver","#B0B4B7"],["Gunmetal","#43484C"],["Match trim","@4"]]},
+];
+const sel = {1:0,2:0,3:0,4:0,5:0};
+
+// ---------- colour maths ----------
+const toLin = new Float32Array(256);
+for(let i=0;i<256;i++){const c=i/255;toLin[i]=c<=0.04045?c/12.92:Math.pow((c+0.055)/1.055,2.4);}
+const TOS = new Uint8ClampedArray(4096);
+for(let i=0;i<4096;i++){const c=i/4095;TOS[i]=Math.round(255*(c<=0.0031308?12.92*c:1.055*Math.pow(c,1/2.4)-0.055));}
+const hexLin = h=>[1,3,5].map(i=>toLin[parseInt(h.slice(i,i+2),16)]);
+
+function resolve(id){ // hex or null (original), following "match" links
+  const g = GROUPS.find(g=>g.id===id); const v = g.options[sel[id]][1];
+  if(v && v[0]==="@"){ const r = resolve(+v.slice(1)); return r ?? GROUPS.find(x=>x.id===+v.slice(1)).orig; }
+  return v;
+}
+const cfgKey = ()=>GROUPS.map(g=>resolve(g.id)||"-").join("|");
+
+// ---------- frames ----------
+const frames = [];
+function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src;});}
+async function prepare(){
+  const tmp=document.createElement("canvas"); tmp.width=1600; tmp.height=747;
+  const tc=tmp.getContext("2d",{willReadFrequently:true});
+  for(const a of ANG){
+    const [img,msk]=await Promise.all([loadImg(ASSETS[a].img),loadImg(ASSETS[a].mask)]);
+    tc.clearRect(0,0,1600,747); tc.drawImage(img,0,0,1600,747);
+    const src=tc.getImageData(0,0,1600,747);
+    tc.clearRect(0,0,1600,747); tc.drawImage(msk,0,0,1600,747);
+    const md=tc.getImageData(0,0,1600,747).data;
+    const n=1600*747, lab=new Uint8Array(n), hist=[...Array(6)].map(()=>new Uint32Array(1024));
+    const d=src.data;
+    for(let i=0;i<n;i++){
+      const v=md[i*4], k=v<6?v:0; lab[i]=k;
+      if(k){const L=0.2126*toLin[d[i*4]]+0.7152*toLin[d[i*4+1]]+0.0722*toLin[d[i*4+2]];hist[k][Math.min(1023,(L*1023)|0)]++;}
+    }
+    const ref=[0];
+    for(let k=1;k<6;k++){let tot=0;for(const v of hist[k])tot+=v;let acc=0,m=0;for(let b=0;b<1024;b++){acc+=hist[k][b];if(acc>=tot/2){m=b;break;}}ref[k]=Math.max(0.004,(m+0.5)/1023);}
+    frames.push({angle:a,src,lab,ref});
+  }
+}
+
+const cache=new Map(); let cacheKey="";
+function render(idx){
+  const key=cfgKey();
+  if(key!==cacheKey){cache.clear();cacheKey=key;}
+  if(cache.has(idx)) return cache.get(idx);
+  const f=frames[idx], out=new ImageData(new Uint8ClampedArray(f.src.data),1600,747), d=out.data, s=f.src.data;
+  const T=[null]; for(let k=1;k<6;k++){const h=resolve(k);T[k]=h?hexLin(h):null;}
+  const lab=f.lab, n=lab.length;
+  for(let i=0;i<n;i++){
+    const k=lab[i]; if(!k||!T[k]) continue;
+    const p=i*4, t=T[k], Lr=f.ref[k];
+    const L=0.2126*toLin[s[p]]+0.7152*toLin[s[p+1]]+0.0722*toLin[s[p+2]];
+    let r,g,b;
+    if(L<=Lr){ let m=L/Lr; if(Lr<0.03) m=Math.pow(m,0.6); r=t[0]*m; g=t[1]*m; b=t[2]*m; }
+    else { const h=Math.pow((L-Lr)/(1-Lr),0.9); r=t[0]+(1-t[0])*h; g=t[1]+(1-t[1])*h; b=t[2]+(1-t[2])*h; }
+    d[p]=TOS[(r*4095)|0]; d[p+1]=TOS[(g*4095)|0]; d[p+2]=TOS[(b*4095)|0];
+  }
+  const cv=document.createElement("canvas"); cv.width=1600; cv.height=747; cv.getContext("2d").putImageData(out,0,0);
+  cache.set(idx,cv); return cv;
+}
+let warmTimer=null;
+function warm(){ // pre-render remaining frames in the background so rotation stays smooth
+  clearTimeout(warmTimer); const key=cfgKey(); let i=0;
+  const step=()=>{ if(cfgKey()!==key) return; while(i<frames.length&&cache.has(i)) i++; if(i>=frames.length) return; render(i); warmTimer=setTimeout(step,16); };
+  warmTimer=setTimeout(step,60);
+}
+
+// ---------- viewer ----------
+const cvs=[document.getElementById("c0"),document.getElementById("c1")]; let front=0, shownIdx=-1;
+let angle=0;
+const nearest=a=>{let best=0,bd=999;frames.forEach((f,i)=>{let d=Math.abs(((a-f.angle)%360+540)%360-180);if(d<bd){bd=d;best=i;}});return best;};
+function show(idx,force){
+  if(idx===shownIdx&&!force) return; shownIdx=idx;
+  const src=render(idx), back=1-front, ctx=cvs[back].getContext("2d");
+  ctx.clearRect(0,0,1600,747); ctx.drawImage(src,0,0);
+  cvs[back].style.opacity=1; cvs[front].style.opacity=0; front=back;
+}
+const degEl=document.getElementById("deg"), knob=document.getElementById("knob"), range=document.getElementById("range");
+function setAngle(a,snap){
+  angle=((a%360)+360)%360; const idx=nearest(angle);
+  if(snap) angle=frames[idx].angle;
+  show(idx);
+  degEl.textContent=frames[idx].angle+"°";
+  knob.style.left=(angle/360*100)+"%"; range.value=Math.round(angle)%360;
+}
+const ticks=document.getElementById("ticks");
+ANG.forEach(a=>{const t=document.createElement("span");t.className="tick";t.style.left=(a/360*100)+"%";ticks.appendChild(t);});
+
+const stage=document.getElementById("stage");
+let drag=null;
+stage.addEventListener("pointerdown",e=>{if(!frames.length)return;drag={x:e.clientX,a:angle};stage.setPointerCapture(e.pointerId);stage.classList.add("dragging");document.getElementById("hint").textContent="Release to stop";});
+stage.addEventListener("pointermove",e=>{if(!drag)return;const per=360/(stage.clientWidth*1.15);setAngle(drag.a-(e.clientX-drag.x)*per);});
+const end=()=>{if(!drag)return;drag=null;stage.classList.remove("dragging");document.getElementById("hint").textContent="Drag to rotate";setAngle(angle,true);};
+stage.addEventListener("pointerup",end); stage.addEventListener("pointercancel",end);
+const stepFrame=dir=>{const i=nearest(angle);setAngle(frames[(i+dir+frames.length)%frames.length].angle,true);};
+stage.addEventListener("keydown",e=>{if(e.key==="ArrowLeft"){stepFrame(1);e.preventDefault();}if(e.key==="ArrowRight"){stepFrame(-1);e.preventDefault();}});
+document.getElementById("prev").onclick=()=>stepFrame(-1);
+document.getElementById("next").onclick=()=>stepFrame(1);
+range.addEventListener("input",()=>setAngle(+range.value));
+range.addEventListener("change",()=>setAngle(+range.value,true));
+
+// ---------- panel ----------
+const panel=document.getElementById("panel");
+function swatchColor(g,v){ if(v===null) return g.orig; if(v[0]==="@"){return resolve(+v.slice(1))||GROUPS.find(x=>x.id===+v.slice(1)).orig;} return v; }
+function buildPanel(){
+  panel.innerHTML="";
+  GROUPS.forEach(g=>{
+    const sec=document.createElement("section"); sec.className="group";
+    const head=document.createElement("div"); head.className="ghead";
+    const h=document.createElement("h2"); h.textContent=g.name; h.id="g"+g.id;
+    const o=document.createElement("output"); o.textContent=g.options[sel[g.id]][0];
+    head.append(h,o);
+    const row=document.createElement("div"); row.className="swatches"; row.setAttribute("role","radiogroup"); row.setAttribute("aria-labelledby","g"+g.id);
+    g.options.forEach(([name,v],i)=>{
+      const b=document.createElement("button"); b.className="sw"+(v&&v[0]==="@"?" match":"");
+      b.setAttribute("role","radio"); b.setAttribute("aria-checked",sel[g.id]===i?"true":"false"); b.setAttribute("aria-label",name); b.title=name;
+      b.tabIndex=sel[g.id]===i?0:-1;
+      b.style.setProperty("--c",swatchColor(g,v));
+      if(v&&v[0]==="@") b.style.setProperty("--c2",resolve(g.id)||g.orig);
+      if(v===null){const t=document.createElement("span");t.className="tag";t.textContent="O";t.setAttribute("aria-hidden","true");b.appendChild(t);}
+      b.onclick=()=>{sel[g.id]=i;apply(g.id);};
+      b.onkeydown=e=>{const dir=(e.key==="ArrowRight"||e.key==="ArrowDown")?1:(e.key==="ArrowLeft"||e.key==="ArrowUp")?-1:0;if(!dir)return;e.preventDefault();sel[g.id]=(i+dir+g.options.length)%g.options.length;apply(g.id,true);};
+      row.appendChild(b);
+    });
+    sec.append(head,row); panel.appendChild(sec);
+  });
+  const r=document.createElement("button"); r.className="reset"; r.textContent="Reset to original colours";
+  r.onclick=()=>{for(const k in sel)sel[k]=0;apply();};
+  panel.appendChild(r);
+}
+function apply(focusId,refocus){
+  buildPanel();
+  if(refocus){const el=panel.querySelector(`[aria-labelledby="g${focusId}"] [aria-checked="true"]`); el&&el.focus();}
+  document.documentElement.style.setProperty("--accent",resolve(1)||"#B3141B");
+  if(frames.length){show(nearest(angle),true);warm();}
+}
+
+// ---------- backgrounds ----------
+const bg=document.getElementById("bg"); let objURL=null;
+document.querySelectorAll(".chip[data-bg]").forEach(c=>c.onclick=()=>{
+  document.querySelectorAll(".chip[data-bg]").forEach(x=>x.setAttribute("aria-pressed","false")); c.setAttribute("aria-pressed","true");
+  bg.className="bg "+c.dataset.bg; bg.style.backgroundImage="";
+});
+document.getElementById("bgfile").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f) return; if(objURL) URL.revokeObjectURL(objURL);
+  objURL=URL.createObjectURL(f); bg.className="bg"; bg.style.background=`center/cover no-repeat url("${objURL}")`;
+  document.querySelectorAll(".chip[data-bg]").forEach(x=>x.setAttribute("aria-pressed","false"));
+});
+document.querySelector("label.chip").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();document.getElementById("bgfile").click();}});
+
+// ---------- start ----------
+buildPanel();
+prepare().then(()=>{
+  document.getElementById("loading").remove();
+  setAngle(0,true); warm();
+}).catch(err=>{document.getElementById("loading").textContent="The car frames couldn’t be loaded. Reload the page to try again.";console.error(err);});
+</script>
+</body>
+</html>
